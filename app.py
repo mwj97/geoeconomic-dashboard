@@ -303,25 +303,7 @@ if len(corridor_centers_df) > 0:
         line_width_min_pixels=4
     )
 
-    # Black shadow/outline for corridor names (rendered first for outline effect)
-    corridor_text_shadow = pdk.Layer(
-        "TextLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_text="name",
-        get_size=22,  # Large, visible text
-        get_color=[0, 0, 0, 255],  # Black outline
-        get_angle=0,
-        get_text_anchor="'middle'",
-        get_alignment_baseline="'bottom'",
-        offset=[0, -40],  # Position above marker
-        font_family="'Arial', 'Helvetica', sans-serif",
-        font_weight="bold",
-        pickable=False,
-        outline_width=4
-    )
-
-    # White text for corridor names (rendered on top)
+    # Corridor names with dark background for visibility
     corridor_text_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
@@ -335,28 +317,13 @@ if len(corridor_centers_df) > 0:
         offset=[0, -40],  # Position above marker
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
-        pickable=False
-    )
-
-    # Black shadow/outline for trade values
-    corridor_value_shadow = pdk.Layer(
-        "TextLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_text="formatted_value",
-        get_size=20,  # Large, visible values
-        get_color=[0, 0, 0, 255],  # Black outline
-        get_angle=0,
-        get_text_anchor="'middle'",
-        get_alignment_baseline="'top'",
-        offset=[0, 40],  # Position below marker
-        font_family="'Arial', 'Helvetica', sans-serif",
-        font_weight="bold",
         pickable=False,
-        outline_width=4
+        background=True,
+        get_background_color=[0, 0, 0, 200],  # Semi-transparent black background
+        background_padding=[4, 2, 4, 2]  # Padding around text: [left, top, right, bottom]
     )
 
-    # Cyan text for trade values (rendered on top)
+    # Cyan text for trade values with dark background
     corridor_value_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
@@ -370,13 +337,14 @@ if len(corridor_centers_df) > 0:
         offset=[0, 40],  # Position below marker
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
-        pickable=False
+        pickable=False,
+        background=True,
+        get_background_color=[0, 0, 0, 200],  # Semi-transparent black background
+        background_padding=[4, 2, 4, 2]  # Padding around text: [left, top, right, bottom]
     )
 else:
     corridor_points_layer = None
-    corridor_text_shadow = None
     corridor_text_layer = None
-    corridor_value_shadow = None
     corridor_value_layer = None
 
 # Define the initial view state
@@ -389,16 +357,12 @@ view_state = pdk.ViewState(
 )
 
 # Create layers list with proper ordering (bottom to top)
-# Order: countries → heatmap → corridor points → text shadows → text labels
+# Order: countries → heatmap → corridor points → text labels
 layers_list = [countries_layer, heatmap_layer]
 if corridor_points_layer is not None:
     layers_list.append(corridor_points_layer)
-if corridor_text_shadow is not None:
-    layers_list.append(corridor_text_shadow)
 if corridor_text_layer is not None:
     layers_list.append(corridor_text_layer)
-if corridor_value_shadow is not None:
-    layers_list.append(corridor_value_shadow)
 if corridor_value_layer is not None:
     layers_list.append(corridor_value_layer)
 

@@ -1,0 +1,7 @@
+# Simplified requirements for Streamlit Cloud deployment
+# Use this if the main requirements.txt fails
+
+streamlit>=1.50.0
+pydeck>=0.9.0
+pandas>=2.2.0
+numpy>=1.24.0

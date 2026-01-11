@@ -289,53 +289,67 @@ corridor_centers_df = pd.DataFrame(corridor_centers)
 
 # Define scatter plot layer for corridor labels - made more prominent
 if len(corridor_centers_df) > 0:
+    # Background circles for text labels to ensure visibility
+    text_background_layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_color=[10, 14, 39, 220],  # Dark background with high opacity
+        get_radius=350000,  # Larger radius for background
+        pickable=False,
+        stroked=False
+    )
+
     corridor_points_layer = pdk.Layer(
         "ScatterplotLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_color=[0, 255, 255, 255],  # Bright cyan with full opacity
-        get_radius=250000,  # Increased from 150000 for better visibility
+        get_radius=200000,  # Slightly smaller than background
         pickable=True,
         auto_highlight=True,
         stroked=True,
         get_line_color=[255, 255, 255, 255],  # White border
-        line_width_min_pixels=2
+        line_width_min_pixels=3
     )
 
     # Add text labels that stay visible with corridor names and values
+    # Using larger size and better contrast
     corridor_text_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="name",
-        get_size=16,
-        get_color=[255, 255, 255, 255],  # White text
+        get_size=18,  # Increased from 16
+        get_color=[255, 255, 255, 255],  # White text with full opacity
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'bottom'",
-        offset=[0, -30],  # Position text above the marker
+        offset=[0, -35],  # Adjusted position
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
         pickable=False
     )
 
     # Add value labels below the corridor names
+    # Using cyan color for better visibility against dark background
     corridor_value_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="formatted_value",
-        get_size=14,
-        get_color=[0, 255, 255, 255],  # Cyan text for values
+        get_size=16,  # Increased from 14
+        get_color=[0, 255, 255, 255],  # Bright cyan text for values
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'top'",
-        offset=[0, 30],  # Position text below the marker
+        offset=[0, 35],  # Adjusted position
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
         pickable=False
     )
 else:
+    text_background_layer = None
     corridor_points_layer = None
     corridor_text_layer = None
     corridor_value_layer = None
@@ -349,14 +363,17 @@ view_state = pdk.ViewState(
     bearing=0
 )
 
-# Create layers list
+# Create layers list with proper ordering (bottom to top)
+# Order: countries → heatmap → text backgrounds → corridor points → text labels
 layers_list = [countries_layer, heatmap_layer]
+if text_background_layer is not None:
+    layers_list.append(text_background_layer)
 if corridor_points_layer is not None:
     layers_list.append(corridor_points_layer)
-    if corridor_text_layer is not None:
-        layers_list.append(corridor_text_layer)
-    if corridor_value_layer is not None:
-        layers_list.append(corridor_value_layer)
+if corridor_text_layer is not None:
+    layers_list.append(corridor_text_layer)
+if corridor_value_layer is not None:
+    layers_list.append(corridor_value_layer)
 
 # Create the deck with dark map style - layer order: countries, heatmap, corridor points
 r = pdk.Deck(

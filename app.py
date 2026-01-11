@@ -301,8 +301,44 @@ if len(corridor_centers_df) > 0:
         get_line_color=[255, 255, 255, 255],  # White border
         line_width_min_pixels=2
     )
+
+    # Add text labels that stay visible with corridor names and values
+    corridor_text_layer = pdk.Layer(
+        "TextLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_text="name",
+        get_size=16,
+        get_color=[255, 255, 255, 255],  # White text
+        get_angle=0,
+        get_text_anchor="'middle'",
+        get_alignment_baseline="'bottom'",
+        offset=[0, -30],  # Position text above the marker
+        font_family="'Arial', 'Helvetica', sans-serif",
+        font_weight="bold",
+        pickable=False
+    )
+
+    # Add value labels below the corridor names
+    corridor_value_layer = pdk.Layer(
+        "TextLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_text="formatted_value",
+        get_size=14,
+        get_color=[0, 255, 255, 255],  # Cyan text for values
+        get_angle=0,
+        get_text_anchor="'middle'",
+        get_alignment_baseline="'top'",
+        offset=[0, 30],  # Position text below the marker
+        font_family="'Arial', 'Helvetica', sans-serif",
+        font_weight="bold",
+        pickable=False
+    )
 else:
     corridor_points_layer = None
+    corridor_text_layer = None
+    corridor_value_layer = None
 
 # Define the initial view state
 view_state = pdk.ViewState(
@@ -317,6 +353,10 @@ view_state = pdk.ViewState(
 layers_list = [countries_layer, heatmap_layer]
 if corridor_points_layer is not None:
     layers_list.append(corridor_points_layer)
+    if corridor_text_layer is not None:
+        layers_list.append(corridor_text_layer)
+    if corridor_value_layer is not None:
+        layers_list.append(corridor_value_layer)
 
 # Create the deck with dark map style - layer order: countries, heatmap, corridor points
 r = pdk.Deck(

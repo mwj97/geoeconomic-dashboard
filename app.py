@@ -257,14 +257,22 @@ heatmap_layer = pdk.Layer(
     pickable=False
 )
 
-# Create corridor center points for labels
+# Create corridor center points for labels with quarterly data
 corridor_centers = []
 for corridor_name in selected_corridors:
     center = corridor_info[corridor_name]['center']
+    # Get quarterly value for this corridor
+    corridor_quarter_data = filtered_data[filtered_data['corridor'] == corridor_name]
+    quarterly_value = corridor_quarter_data['value'].iloc[0] if len(corridor_quarter_data) > 0 else 0
+
     corridor_centers.append({
         'name': corridor_name,
         'lat': center[0],
-        'lon': center[1]
+        'lon': center[1],
+        'quarterly_value': quarterly_value,
+        'formatted_value': format_currency(quarterly_value),
+        'quarter': selected_quarter,
+        'annual_estimate': format_currency(quarterly_value * 4)
     })
 
 corridor_centers_df = pd.DataFrame(corridor_centers)
@@ -303,11 +311,21 @@ r = pdk.Deck(
     initial_view_state=view_state,
     map_style="mapbox://styles/mapbox/dark-v10",
     tooltip={
-        "html": "<b>{name}</b><br/>Economic Corridor",
+        "html": "<div style='font-family: monospace;'>"
+                "<b style='font-size: 16px; color: #00ffff;'>{name}</b><br/>"
+                "<div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid #00ffff;'>"
+                "<b>Period:</b> {quarter}<br/>"
+                "<b>Quarterly Trade:</b> {formatted_value}<br/>"
+                "<b>Annual Estimate:</b> {annual_estimate}<br/>"
+                "</div>"
+                "</div>",
         "style": {
             "backgroundColor": "#0a0e27",
             "color": "#00ffff",
-            "border": "1px solid #00ffff"
+            "border": "2px solid #00ffff",
+            "borderRadius": "8px",
+            "padding": "12px",
+            "boxShadow": "0 0 20px rgba(0, 255, 255, 0.3)"
         }
     }
 )

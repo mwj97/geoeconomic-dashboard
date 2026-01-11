@@ -289,69 +289,94 @@ corridor_centers_df = pd.DataFrame(corridor_centers)
 
 # Define scatter plot layer for corridor labels - made more prominent
 if len(corridor_centers_df) > 0:
-    # Background circles for text labels to ensure visibility
-    text_background_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_color=[10, 14, 39, 220],  # Dark background with high opacity
-        get_radius=350000,  # Larger radius for background
-        pickable=False,
-        stroked=False
-    )
-
+    # Prominent corridor marker points
     corridor_points_layer = pdk.Layer(
         "ScatterplotLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_color=[0, 255, 255, 255],  # Bright cyan with full opacity
-        get_radius=200000,  # Slightly smaller than background
+        get_radius=300000,  # Large visible markers
         pickable=True,
         auto_highlight=True,
         stroked=True,
         get_line_color=[255, 255, 255, 255],  # White border
-        line_width_min_pixels=3
+        line_width_min_pixels=4
     )
 
-    # Add text labels that stay visible with corridor names and values
-    # Using larger size and better contrast
+    # Black shadow/outline for corridor names (rendered first for outline effect)
+    corridor_text_shadow = pdk.Layer(
+        "TextLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_text="name",
+        get_size=22,  # Large, visible text
+        get_color=[0, 0, 0, 255],  # Black outline
+        get_angle=0,
+        get_text_anchor="'middle'",
+        get_alignment_baseline="'bottom'",
+        offset=[0, -40],  # Position above marker
+        font_family="'Arial', 'Helvetica', sans-serif",
+        font_weight="bold",
+        pickable=False,
+        outline_width=4
+    )
+
+    # White text for corridor names (rendered on top)
     corridor_text_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="name",
-        get_size=18,  # Increased from 16
+        get_size=20,  # Large, visible text
         get_color=[255, 255, 255, 255],  # White text with full opacity
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'bottom'",
-        offset=[0, -35],  # Adjusted position
+        offset=[0, -40],  # Position above marker
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
         pickable=False
     )
 
-    # Add value labels below the corridor names
-    # Using cyan color for better visibility against dark background
+    # Black shadow/outline for trade values
+    corridor_value_shadow = pdk.Layer(
+        "TextLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_text="formatted_value",
+        get_size=20,  # Large, visible values
+        get_color=[0, 0, 0, 255],  # Black outline
+        get_angle=0,
+        get_text_anchor="'middle'",
+        get_alignment_baseline="'top'",
+        offset=[0, 40],  # Position below marker
+        font_family="'Arial', 'Helvetica', sans-serif",
+        font_weight="bold",
+        pickable=False,
+        outline_width=4
+    )
+
+    # Cyan text for trade values (rendered on top)
     corridor_value_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="formatted_value",
-        get_size=16,  # Increased from 14
+        get_size=18,  # Large, visible values
         get_color=[0, 255, 255, 255],  # Bright cyan text for values
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'top'",
-        offset=[0, 35],  # Adjusted position
+        offset=[0, 40],  # Position below marker
         font_family="'Arial', 'Helvetica', sans-serif",
         font_weight="bold",
         pickable=False
     )
 else:
-    text_background_layer = None
     corridor_points_layer = None
+    corridor_text_shadow = None
     corridor_text_layer = None
+    corridor_value_shadow = None
     corridor_value_layer = None
 
 # Define the initial view state
@@ -364,14 +389,16 @@ view_state = pdk.ViewState(
 )
 
 # Create layers list with proper ordering (bottom to top)
-# Order: countries → heatmap → text backgrounds → corridor points → text labels
+# Order: countries → heatmap → corridor points → text shadows → text labels
 layers_list = [countries_layer, heatmap_layer]
-if text_background_layer is not None:
-    layers_list.append(text_background_layer)
 if corridor_points_layer is not None:
     layers_list.append(corridor_points_layer)
+if corridor_text_shadow is not None:
+    layers_list.append(corridor_text_shadow)
 if corridor_text_layer is not None:
     layers_list.append(corridor_text_layer)
+if corridor_value_shadow is not None:
+    layers_list.append(corridor_value_shadow)
 if corridor_value_layer is not None:
     layers_list.append(corridor_value_layer)
 

@@ -303,44 +303,44 @@ if len(corridor_centers_df) > 0:
         line_width_min_pixels=4
     )
 
-    # Corridor names with dark background for visibility
+    # Corridor names with professional styling
     corridor_text_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="name",
-        get_size=20,  # Large, visible text
-        get_color=[255, 255, 255, 255],  # White text with full opacity
+        get_size=16,  # Professional, readable text size
+        get_color=[245, 245, 245, 255],  # Off-white for softer appearance
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'bottom'",
-        offset=[0, -40],  # Position above marker
-        font_family="'Arial', 'Helvetica', sans-serif",
-        font_weight="bold",
+        offset=[0, -45],  # Position above marker with more space
+        font_family="'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif",
+        font_weight="600",  # Semi-bold for professional look
         pickable=False,
         background=True,
-        get_background_color=[0, 0, 0, 200],  # Semi-transparent black background
-        background_padding=[4, 2, 4, 2]  # Padding around text: [left, top, right, bottom]
+        get_background_color=[20, 25, 35, 230],  # Dark blue-grey with high opacity
+        background_padding=[8, 4, 8, 4]  # More padding for clean look
     )
 
-    # Cyan text for trade values with dark background
+    # Trade values with professional styling
     corridor_value_layer = pdk.Layer(
         "TextLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="formatted_value",
-        get_size=18,  # Large, visible values
-        get_color=[0, 255, 255, 255],  # Bright cyan text for values
+        get_size=14,  # Slightly smaller for hierarchy
+        get_color=[100, 200, 255, 255],  # Professional light blue instead of neon cyan
         get_angle=0,
         get_text_anchor="'middle'",
         get_alignment_baseline="'top'",
-        offset=[0, 40],  # Position below marker
-        font_family="'Arial', 'Helvetica', sans-serif",
-        font_weight="bold",
+        offset=[0, 45],  # Position below marker with more space
+        font_family="'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif",
+        font_weight="500",  # Medium weight for values
         pickable=False,
         background=True,
-        get_background_color=[0, 0, 0, 200],  # Semi-transparent black background
-        background_padding=[4, 2, 4, 2]  # Padding around text: [left, top, right, bottom]
+        get_background_color=[20, 25, 35, 230],  # Matching dark blue-grey with high opacity
+        background_padding=[8, 4, 8, 4]  # Consistent padding for clean look
     )
 else:
     corridor_points_layer = None
@@ -372,22 +372,23 @@ r = pdk.Deck(
     initial_view_state=view_state,
     map_style="mapbox://styles/mapbox/dark-v10",
     tooltip={
-        "html": "<div style='font-family: monospace;'>"
-                "<b style='font-size: 16px; color: #00ffff;'>{name}</b><br/>"
-                "<div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid #00ffff;'>"
-                "<b>Period:</b> {quarter}<br/>"
-                "<b>Quarterly Trade:</b> {formatted_value} (Billions USD)<br/>"
-                "<b>Annual Estimate:</b> {annual_estimate} (Billions USD)<br/>"
-                "<b>Share of Global Total:</b> {global_share}<br/>"
+        "html": "<div style='font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;'>"
+                "<b style='font-size: 15px; color: #f5f5f5; font-weight: 600;'>{name}</b><br/>"
+                "<div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 200, 255, 0.3);'>"
+                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Period:</b> <span style='color: #e0e0e0;'>{quarter}</span></div>"
+                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Quarterly Trade:</b> <span style='color: #64c8ff;'>{formatted_value} (Billions USD)</span></div>"
+                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Annual Estimate:</b> <span style='color: #64c8ff;'>{annual_estimate} (Billions USD)</span></div>"
+                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Share of Global Total:</b> <span style='color: #e0e0e0;'>{global_share}</span></div>"
                 "</div>"
                 "</div>",
         "style": {
-            "backgroundColor": "#0a0e27",
-            "color": "#00ffff",
-            "border": "2px solid #00ffff",
-            "borderRadius": "8px",
-            "padding": "12px",
-            "boxShadow": "0 0 20px rgba(0, 255, 255, 0.3)"
+            "backgroundColor": "rgba(20, 25, 35, 0.95)",
+            "color": "#e0e0e0",
+            "border": "1px solid rgba(100, 200, 255, 0.3)",
+            "borderRadius": "6px",
+            "padding": "12px 14px",
+            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.5)",
+            "fontSize": "13px"
         }
     }
 )

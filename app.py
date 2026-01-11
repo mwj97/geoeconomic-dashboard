@@ -171,7 +171,7 @@ st.sidebar.markdown(f"• Annual Trade Volume: ${total_base_value:.0f}B")
 st.sidebar.markdown("---")
 
 # Main title
-st.title("🛰️ Geoeconomic Intelligence Dashboard")
+st.title("🛰️ Strategic Trade Chokepoints")
 st.markdown("Quarterly trade flow heat map across key economic corridors")
 
 # Add time slider for selecting quarters

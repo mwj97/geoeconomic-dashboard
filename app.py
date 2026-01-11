@@ -182,18 +182,6 @@ point_layer = pdk.Layer(
     pickable=True
 )
 
-# Define GeoJSON layer for country borders
-geojson_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data="https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json",
-    stroked=True,
-    filled=True,
-    get_fill_color=[10, 20, 50, 80],  # Very dark and transparent
-    get_line_color=[100, 200, 200, 100],  # Dim cyan for borders
-    line_width_min_pixels=1,
-    pickable=False
-)
-
 # Define the initial view state
 view_state = pdk.ViewState(
     latitude=30,
@@ -203,9 +191,9 @@ view_state = pdk.ViewState(
     bearing=0
 )
 
-# Create the deck with dark map style - layer order: countries, arcs, points
+# Create the deck with dark map style - layer order: arcs, points
 r = pdk.Deck(
-    layers=[geojson_layer, arc_layer, point_layer],
+    layers=[arc_layer, point_layer],
     initial_view_state=view_state,
     map_style="mapbox://styles/mapbox/dark-v10",
     tooltip={

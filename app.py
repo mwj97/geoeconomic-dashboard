@@ -3,6 +3,7 @@ import pydeck as pdk
 import pandas as pd
 import numpy as np
 import os
+from datetime import datetime, timedelta
 
 # Page configuration
 st.set_page_config(
@@ -45,93 +46,155 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Load shipment data
+# Generate economic corridor data with quarterly values
 @st.cache_data
-def load_data():
-    # Use relative path that works both locally and on Streamlit Cloud
-    try:
-        # Try relative path from script location
-        data_path = os.path.join(os.path.dirname(__file__), 'data', 'shipments.csv')
-        df = pd.read_csv(data_path)
-    except (FileNotFoundError, NameError):
-        # Fallback to current working directory (Streamlit Cloud)
-        data_path = os.path.join('data', 'shipments.csv')
-        df = pd.read_csv(data_path)
-    return df
+def generate_corridor_data():
+    """Generate synthetic quarterly trade data for major economic corridors"""
 
-# Load the data
-shipments_df = load_data()
+    # Define major economic corridors with their geographic coordinates
+    corridors = {
+        'Strait of Hormuz': {
+            'region': [(26.5, 56.0), (26.5, 57.0), (25.5, 57.0), (25.5, 56.0)],
+            'center': (26.0, 56.5),
+            'base_value': 850  # Billion USD annually
+        },
+        'Red Sea / Suez Canal': {
+            'region': [(30.5, 32.3), (30.5, 32.5), (12.5, 43.5), (12.5, 43.0)],
+            'center': (20.0, 38.0),
+            'base_value': 620
+        },
+        'Malacca Strait': {
+            'region': [(1.0, 102.5), (1.5, 104.0), (5.5, 100.0), (5.0, 99.5)],
+            'center': (3.0, 101.5),
+            'base_value': 780
+        },
+        'South China Sea': {
+            'region': [(5.0, 110.0), (5.0, 120.0), (20.0, 120.0), (20.0, 110.0)],
+            'center': (12.5, 115.0),
+            'base_value': 940
+        },
+        'Panama Canal': {
+            'region': [(9.0, -79.9), (9.0, -79.4), (9.5, -79.4), (9.5, -79.9)],
+            'center': (9.25, -79.65),
+            'base_value': 340
+        },
+        'English Channel': {
+            'region': [(50.5, -1.5), (50.5, 2.0), (51.0, 2.0), (51.0, -1.5)],
+            'center': (50.75, 0.25),
+            'base_value': 580
+        },
+        'Bosphorus Strait': {
+            'region': [(41.0, 28.9), (41.0, 29.1), (41.3, 29.1), (41.3, 28.9)],
+            'center': (41.15, 29.0),
+            'base_value': 285
+        },
+        'Strait of Gibraltar': {
+            'region': [(35.9, -5.5), (35.9, -5.2), (36.1, -5.2), (36.1, -5.5)],
+            'center': (36.0, -5.35),
+            'base_value': 425
+        }
+    }
+
+    # Generate 20 quarters of data (Q1 2021 - Q4 2025)
+    quarters = []
+    start_date = datetime(2021, 1, 1)
+    for i in range(20):
+        quarter_num = (i % 4) + 1
+        year = 2021 + (i // 4)
+        quarters.append(f"Q{quarter_num} {year}")
+
+    # Generate heat map points for each corridor and quarter
+    all_data = []
+
+    for corridor_name, corridor_info in corridors.items():
+        for q_idx, quarter in enumerate(quarters):
+            # Calculate quarterly value with some variance
+            # Add growth trend and seasonal variation
+            growth_factor = 1 + (q_idx * 0.015)  # 1.5% growth per quarter
+            seasonal_factor = 1 + 0.1 * np.sin(2 * np.pi * (q_idx % 4) / 4)  # Seasonal variation
+            random_factor = np.random.uniform(0.9, 1.1)
+
+            quarterly_value = (corridor_info['base_value'] / 4) * growth_factor * seasonal_factor * random_factor
+
+            # Generate multiple points within the corridor region for heat map effect
+            num_points = int(quarterly_value / 10)  # More valuable corridors get more points
+
+            region = corridor_info['region']
+            lat_min = min(p[0] for p in region)
+            lat_max = max(p[0] for p in region)
+            lon_min = min(p[1] for p in region)
+            lon_max = max(p[1] for p in region)
+
+            for _ in range(num_points):
+                lat = np.random.uniform(lat_min, lat_max)
+                lon = np.random.uniform(lon_min, lon_max)
+                all_data.append({
+                    'corridor': corridor_name,
+                    'quarter': quarter,
+                    'quarter_index': q_idx,
+                    'lat': lat,
+                    'lon': lon,
+                    'value': quarterly_value,
+                    'weight': 1
+                })
+
+    return pd.DataFrame(all_data), quarters, corridors
+
+# Load the corridor data
+corridor_df, available_quarters, corridor_info = generate_corridor_data()
 
 # Sidebar
-st.sidebar.title("🌍 Global Hotspots")
+st.sidebar.title("🌍 Economic Corridors")
 st.sidebar.markdown("---")
 
-# Risk Filter - Checkboxes
-st.sidebar.markdown("**🎯 Risk Filter**")
-show_high = st.sidebar.checkbox("🔴 High Risk", value=True)
-show_medium = st.sidebar.checkbox("🟡 Medium Risk", value=True)
-show_low = st.sidebar.checkbox("🔵 Low Risk", value=True)
+# Corridor Filter - Checkboxes
+st.sidebar.markdown("**🎯 Active Corridors**")
+corridor_filters = {}
+for corridor_name in corridor_info.keys():
+    corridor_filters[corridor_name] = st.sidebar.checkbox(
+        corridor_name.replace('/', '/\n'),
+        value=True,
+        key=corridor_name
+    )
 
-# Filter data based on risk selection
-filtered_data = shipments_df.copy()
-risk_filters = []
-if show_high:
-    risk_filters.append("High")
-if show_medium:
-    risk_filters.append("Medium")
-if show_low:
-    risk_filters.append("Low")
-
-filtered_data = filtered_data[filtered_data['risk_level'].isin(risk_filters)]
+# Get selected corridors
+selected_corridors = [name for name, selected in corridor_filters.items() if selected]
 
 # Sidebar stats
 st.sidebar.markdown("---")
-st.sidebar.markdown("**📊 Active Routes**")
-st.sidebar.markdown(f"• Total: {len(filtered_data)}")
-st.sidebar.markdown(f"• High Risk: {len(filtered_data[filtered_data['risk_level'] == 'High'])}")
-st.sidebar.markdown(f"• Medium Risk: {len(filtered_data[filtered_data['risk_level'] == 'Medium'])}")
-st.sidebar.markdown(f"• Low Risk: {len(filtered_data[filtered_data['risk_level'] == 'Low'])}")
-st.sidebar.markdown("---")
+st.sidebar.markdown("**📊 Corridor Statistics**")
+st.sidebar.markdown(f"• Active Corridors: {len(selected_corridors)}/{len(corridor_info)}")
 
-# Determine overall intelligence level
-high_count = len(filtered_data[filtered_data['risk_level'] == 'High'])
-if high_count >= 3:
-    intel_level = "🔴 CRITICAL"
-elif high_count > 0:
-    intel_level = "🟡 ELEVATED"
-else:
-    intel_level = "🟢 NORMAL"
-st.sidebar.markdown(f"**Intelligence Level**: {intel_level}")
+# Calculate total trade value for selected corridors
+total_base_value = sum(corridor_info[c]['base_value'] for c in selected_corridors)
+st.sidebar.markdown(f"• Annual Trade Volume: ${total_base_value:.0f}B")
+st.sidebar.markdown("---")
 
 # Main title
 st.title("🛰️ Geoeconomic Intelligence Dashboard")
-st.markdown("Real-time defense & aerospace trade flow monitoring")
+st.markdown("Quarterly trade flow heat map across key economic corridors")
 
-# Function to get color based on risk level
-def get_risk_color(risk_level):
-    """Return RGB color based on risk level"""
-    color_map = {
-        "High": [255, 0, 0, 255],      # Red
-        "Medium": [255, 255, 0, 255],  # Yellow
-        "Low": [0, 100, 255, 255]      # Blue
-    }
-    return color_map.get(risk_level, [255, 255, 255, 255])
+# Add time slider for selecting quarters
+st.markdown("### 📅 Time Period Selection")
+selected_quarter_index = st.slider(
+    "Select Quarter",
+    min_value=0,
+    max_value=len(available_quarters) - 1,
+    value=len(available_quarters) - 1,  # Default to most recent quarter
+    format="",
+    label_visibility="collapsed"
+)
 
-# Function to calculate arc width based on value_usd
-def calculate_width(value_usd):
-    """Scale arc width based on shipment value"""
-    # Normalize to 1-10 scale
-    min_width = 2
-    max_width = 12
-    min_value = shipments_df['value_usd'].min()
-    max_value = shipments_df['value_usd'].max()
+# Display selected quarter prominently
+selected_quarter = available_quarters[selected_quarter_index]
+st.markdown(f"**Current Period: {selected_quarter}**")
+st.markdown("---")
 
-    if max_value == min_value:
-        return min_width
-
-    normalized = (value_usd - min_value) / (max_value - min_value)
-    width = min_width + (normalized * (max_width - min_width))
-    return width
+# Filter data based on selected corridors and quarter
+filtered_data = corridor_df[
+    (corridor_df['corridor'].isin(selected_corridors)) &
+    (corridor_df['quarter_index'] == selected_quarter_index)
+].copy()
 
 # Function to format currency values
 def format_currency(value):
@@ -144,23 +207,6 @@ def format_currency(value):
         return f"${value/1e3:.0f}K"
     else:
         return f"${value:.0f}"
-
-# Prepare arc data with colors and widths
-arc_data = filtered_data.copy()
-arc_data['color'] = arc_data['risk_level'].apply(get_risk_color)
-arc_data['width'] = arc_data['value_usd'].apply(calculate_width)
-arc_data['formatted_value'] = arc_data['value_usd'].apply(format_currency)
-
-# Create point data for unique cities (origins and destinations)
-origin_points = filtered_data[['origin_city', 'origin_lat', 'origin_lon']].copy()
-origin_points.columns = ['city', 'lat', 'lon']
-
-dest_points = filtered_data[['dest_city', 'dest_lat', 'dest_lon']].copy()
-dest_points.columns = ['city', 'lat', 'lon']
-
-# Combine and remove duplicates
-point_data = pd.concat([origin_points, dest_points]).drop_duplicates(subset=['city'])
-point_data['size'] = 200
 
 # Load country boundaries GeoJSON
 @st.cache_data
@@ -189,57 +235,79 @@ countries_layer = pdk.Layer(
     pickable=True
 )
 
-# Define arc layer with dynamic colors and widths
-arc_layer = pdk.Layer(
-    "ArcLayer",
-    data=arc_data,
-    get_source_position=["origin_lon", "origin_lat"],
-    get_target_position=["dest_lon", "dest_lat"],
-    get_source_color="color",
-    get_target_color="color",
-    get_width="width",
-    get_height=0.4,
-    pickable=True,
-    auto_highlight=True
+# Define heat map layer for economic corridors
+heatmap_layer = pdk.Layer(
+    "HeatmapLayer",
+    data=filtered_data,
+    get_position=["lon", "lat"],
+    get_weight="weight",
+    radiusPixels=60,
+    intensity=1,
+    threshold=0.05,
+    colorRange=[
+        [0, 0, 0, 0],           # Transparent for low activity
+        [65, 182, 196, 100],    # Light teal
+        [127, 205, 187, 150],   # Medium teal
+        [199, 233, 180, 200],   # Light yellow-green
+        [237, 248, 177, 230],   # Yellow
+        [255, 237, 160, 255],   # Light orange
+        [254, 178, 76, 255],    # Orange
+        [240, 59, 32, 255]      # Red for highest activity
+    ],
+    pickable=False
 )
 
-# Define point layer for cities with cyan color
-point_layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=point_data,
-    get_position=["lon", "lat"],
-    get_color=[0, 255, 255, 255],  # Cyan
-    get_radius="size",
-    radius_scale=600,
-    radius_min_pixels=8,
-    radius_max_pixels=15,
-    pickable=True
-)
+# Create corridor center points for labels
+corridor_centers = []
+for corridor_name in selected_corridors:
+    center = corridor_info[corridor_name]['center']
+    corridor_centers.append({
+        'name': corridor_name,
+        'lat': center[0],
+        'lon': center[1]
+    })
+
+corridor_centers_df = pd.DataFrame(corridor_centers)
+
+# Define scatter plot layer for corridor labels
+if len(corridor_centers_df) > 0:
+    corridor_points_layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=corridor_centers_df,
+        get_position=["lon", "lat"],
+        get_color=[0, 255, 255, 200],  # Cyan
+        get_radius=150000,
+        pickable=True,
+        auto_highlight=True
+    )
+else:
+    corridor_points_layer = None
 
 # Define the initial view state
 view_state = pdk.ViewState(
-    latitude=30,
-    longitude=0,
-    zoom=1.3,
-    pitch=50,
+    latitude=20,
+    longitude=30,
+    zoom=1.5,
+    pitch=45,
     bearing=0
 )
 
-# Create the deck with dark map style - layer order: countries, arcs, points
+# Create layers list
+layers_list = [countries_layer, heatmap_layer]
+if corridor_points_layer is not None:
+    layers_list.append(corridor_points_layer)
+
+# Create the deck with dark map style - layer order: countries, heatmap, corridor points
 r = pdk.Deck(
-    layers=[countries_layer, arc_layer, point_layer],
+    layers=layers_list,
     initial_view_state=view_state,
     map_style="mapbox://styles/mapbox/dark-v10",
     tooltip={
-        "html": "<b>{origin_city} → {dest_city}</b><br/>"
-                "Risk: {risk_level}<br/>"
-                "Value: {formatted_value}<br/>"
-                "Vessel: {vessel_type}<br/>"
-                "Flag: {flag_state}",
+        "html": "<b>{name}</b><br/>Economic Corridor",
         "style": {
             "backgroundColor": "#0a0e27",
             "color": "#00ffff",
-            "border": "1px solid #ff0000"
+            "border": "1px solid #00ffff"
         }
     }
 )
@@ -247,76 +315,80 @@ r = pdk.Deck(
 # Display the map
 st.pydeck_chart(r, use_container_width=True)
 
-# Calculate metrics from filtered data
-total_value = filtered_data['value_usd'].sum()
-avg_value = filtered_data['value_usd'].mean()
-high_risk_count = len(filtered_data[filtered_data['risk_level'] == 'High'])
+# Calculate quarterly metrics for selected corridors
+quarterly_values = filtered_data.groupby('corridor')['value'].first().reset_index()
+total_quarterly_value = quarterly_values['value'].sum() if len(quarterly_values) > 0 else 0
+
+# Calculate quarter-over-quarter change if not first quarter
+if selected_quarter_index > 0:
+    prev_quarter_data = corridor_df[
+        (corridor_df['corridor'].isin(selected_corridors)) &
+        (corridor_df['quarter_index'] == selected_quarter_index - 1)
+    ]
+    prev_quarterly_value = prev_quarter_data.groupby('corridor')['value'].first().sum() if len(prev_quarter_data) > 0 else 0
+
+    if prev_quarterly_value > 0:
+        qoq_change = ((total_quarterly_value - prev_quarterly_value) / prev_quarterly_value) * 100
+        qoq_delta = f"{qoq_change:+.1f}%"
+    else:
+        qoq_delta = "N/A"
+else:
+    qoq_delta = "N/A"
 
 # Add metrics
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Active Routes", len(filtered_data), delta=f"{len(filtered_data) - len(shipments_df) + len(filtered_data)}")
+    st.metric("Active Corridors", len(selected_corridors), delta=None)
 with col2:
-    st.metric("Total Trade Volume", f"${total_value/1e9:.1f}B", delta="+2.3%")
+    st.metric("Quarterly Trade Volume", format_currency(total_quarterly_value), delta=qoq_delta)
 with col3:
-    if high_risk_count == 0:
-        risk_status = "LOW"
-        risk_delta = "IMPROVED"
-    elif high_risk_count <= 2:
-        risk_status = "MODERATE"
-        risk_delta = "STABLE"
-    else:
-        risk_status = "ELEVATED"
-        risk_delta = "RISING"
-    st.metric("Risk Level", risk_status, delta=risk_delta)
+    # Calculate average trade intensity
+    avg_corridor_value = total_quarterly_value / len(selected_corridors) if len(selected_corridors) > 0 else 0
+    intensity_status = "HIGH" if avg_corridor_value > 200 else "MODERATE" if avg_corridor_value > 100 else "LOW"
+    st.metric("Trade Intensity", intensity_status, delta=None)
 
-# Compliance Intelligence - Alert Console
+# Corridor Rankings
 st.markdown("---")
-st.markdown("### ⚠️ LIVE COMPLIANCE ALERTS")
+st.markdown("### 📊 Corridor Rankings by Trade Volume")
 
-# Function to check for compliance violations
-def check_compliance_violations(data):
-    """Check for High Risk shipments with flags of convenience"""
-    flags_of_convenience = ['Panama', 'Liberia', 'Marshall Islands']
+if len(quarterly_values) > 0:
+    # Sort by value and display
+    quarterly_values_sorted = quarterly_values.sort_values('value', ascending=False)
 
-    violations = data[
-        (data['risk_level'] == 'High') &
-        (data['flag_state'].isin(flags_of_convenience))
-    ]
+    ranking_data = []
+    for idx, row in quarterly_values_sorted.iterrows():
+        ranking_data.append({
+            'Rank': len(ranking_data) + 1,
+            'Corridor': row['corridor'],
+            'Quarterly Value': format_currency(row['value']),
+            'Share of Total': f"{(row['value']/total_quarterly_value*100):.1f}%" if total_quarterly_value > 0 else "0%"
+        })
 
-    return violations
-
-# Get compliance violations from filtered data
-compliance_violations = check_compliance_violations(filtered_data)
-
-if len(compliance_violations) > 0:
-    for idx, row in compliance_violations.iterrows():
-        alert_html = f"""
-        <div class="alert-box">
-            <div class="alert-title">🚨 ALERT: High-Risk Shipment on Flag of Convenience</div>
-            <div class="alert-detail">
-                <strong>Route:</strong> {row['origin_city']} → {row['dest_city']}<br/>
-                <strong>Vessel Type:</strong> {row['vessel_type']}<br/>
-                <strong>Flag State:</strong> {row['flag_state']}<br/>
-                <strong>Shipment Value:</strong> ${row['value_usd']:,.0f}<br/>
-                <strong>Risk Level:</strong> {row['risk_level']}<br/>
-                <strong>Action Required:</strong> Enhanced screening and documentation review recommended
-            </div>
-        </div>
-        """
-        st.markdown(alert_html, unsafe_allow_html=True)
-
-    st.markdown(f"**Total Alerts:** {len(compliance_violations)}")
+    ranking_df = pd.DataFrame(ranking_data)
+    st.dataframe(ranking_df, use_container_width=True, hide_index=True)
 else:
-    st.success("✅ No compliance violations detected in current filtered view")
+    st.info("Select corridors to view rankings")
 
-# Data table section
+# Quarterly trend chart
 st.markdown("---")
-st.markdown("### 📋 Shipment Details")
+st.markdown("### 📈 Historical Trade Trends")
 
-# Format the display dataframe with new columns
-display_df = filtered_data[['origin_city', 'dest_city', 'risk_level', 'value_usd', 'vessel_type', 'flag_state']].copy()
-display_df['value_usd'] = display_df['value_usd'].apply(lambda x: f"${x/1e6:.0f}M")
-display_df.columns = ['Origin', 'Destination', 'Risk Level', 'Value (USD)', 'Vessel Type', 'Flag State']
+if len(selected_corridors) > 0:
+    # Prepare trend data for selected corridors
+    trend_data = []
+    for corridor_name in selected_corridors:
+        corridor_trend = corridor_df[corridor_df['corridor'] == corridor_name].groupby('quarter_index')['value'].first().reset_index()
+        corridor_trend['corridor'] = corridor_name
+        trend_data.append(corridor_trend)
 
-st.dataframe(display_df, use_container_width=True, hide_index=True)
+    if trend_data:
+        combined_trend = pd.concat(trend_data, ignore_index=True)
+        combined_trend['quarter'] = combined_trend['quarter_index'].apply(lambda x: available_quarters[x])
+
+        # Pivot for display
+        trend_pivot = combined_trend.pivot(index='quarter', columns='corridor', values='value')
+
+        # Display as line chart
+        st.line_chart(trend_pivot, use_container_width=True)
+else:
+    st.info("Select corridors to view trends")

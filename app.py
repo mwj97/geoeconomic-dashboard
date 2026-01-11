@@ -52,46 +52,48 @@ def generate_corridor_data():
     """Generate synthetic quarterly trade data for major economic corridors"""
 
     # Define major economic corridors with their geographic coordinates
+    # Base values verified from authoritative sources (see DATA_SOURCES.md)
+    # Values in billions USD annually, updated January 2026
     corridors = {
-        'Strait of Hormuz': {
-            'region': [(26.5, 56.0), (26.5, 57.0), (25.5, 57.0), (25.5, 56.0)],
-            'center': (26.0, 56.5),
-            'base_value': 850  # Billion USD annually
-        },
-        'Red Sea / Suez Canal': {
-            'region': [(30.5, 32.3), (30.5, 32.5), (12.5, 43.5), (12.5, 43.0)],
-            'center': (20.0, 38.0),
-            'base_value': 620
+        'South China Sea': {
+            'region': [(5.0, 110.0), (5.0, 120.0), (20.0, 120.0), (20.0, 110.0)],
+            'center': (12.5, 115.0),
+            'base_value': 5300  # $5.3T - CSIS, ASEAN Maritime Outlook, U.S. EIA
         },
         'Malacca Strait': {
             'region': [(1.0, 102.5), (1.5, 104.0), (5.5, 100.0), (5.0, 99.5)],
             'center': (3.0, 101.5),
-            'base_value': 780
+            'base_value': 3500  # $3.5T - Maritime & Port Authority of Singapore
         },
-        'South China Sea': {
-            'region': [(5.0, 110.0), (5.0, 120.0), (20.0, 120.0), (20.0, 110.0)],
-            'center': (12.5, 115.0),
-            'base_value': 940
-        },
-        'Panama Canal': {
-            'region': [(9.0, -79.9), (9.0, -79.4), (9.5, -79.4), (9.5, -79.9)],
-            'center': (9.25, -79.65),
-            'base_value': 340
+        'Strait of Hormuz': {
+            'region': [(26.5, 56.0), (26.5, 57.0), (25.5, 57.0), (25.5, 56.0)],
+            'center': (26.0, 56.5),
+            'base_value': 1400  # $1.4T - U.S. EIA, IEA, UNCTAD
         },
         'English Channel': {
             'region': [(50.5, -1.5), (50.5, 2.0), (51.0, 2.0), (51.0, -1.5)],
             'center': (50.75, 0.25),
-            'base_value': 580
-        },
-        'Bosphorus Strait': {
-            'region': [(41.0, 28.9), (41.0, 29.1), (41.3, 29.1), (41.3, 28.9)],
-            'center': (41.15, 29.0),
-            'base_value': 285
+            'base_value': 1400  # $1.4T - UK Office for National Statistics
         },
         'Strait of Gibraltar': {
             'region': [(35.9, -5.5), (35.9, -5.2), (36.1, -5.2), (36.1, -5.5)],
             'center': (36.0, -5.35),
-            'base_value': 425
+            'base_value': 1200  # $1.2T - UNCTAD (10% of global trade)
+        },
+        'Red Sea / Suez Canal': {
+            'region': [(30.5, 32.3), (30.5, 32.5), (12.5, 43.5), (12.5, 43.0)],
+            'center': (20.0, 38.0),
+            'base_value': 700  # $700B - Suez Canal Authority (2024, impacted by disruptions)
+        },
+        'Bosphorus Strait': {
+            'region': [(41.0, 28.9), (41.0, 29.1), (41.3, 29.1), (41.3, 28.9)],
+            'center': (41.15, 29.0),
+            'base_value': 400  # $400B - Turkish Ministry of Transport
+        },
+        'Panama Canal': {
+            'region': [(9.0, -79.9), (9.0, -79.4), (9.5, -79.4), (9.5, -79.9)],
+            'center': (9.25, -79.65),
+            'base_value': 270  # $270B - Panama Canal Authority
         }
     }
 

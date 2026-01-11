@@ -48,8 +48,15 @@ st.markdown("""
 # Load shipment data
 @st.cache_data
 def load_data():
-    data_path = os.path.join(os.path.dirname(__file__), 'data', 'shipments.csv')
-    df = pd.read_csv(data_path)
+    # Use relative path that works both locally and on Streamlit Cloud
+    try:
+        # Try relative path from script location
+        data_path = os.path.join(os.path.dirname(__file__), 'data', 'shipments.csv')
+        df = pd.read_csv(data_path)
+    except (FileNotFoundError, NameError):
+        # Fallback to current working directory (Streamlit Cloud)
+        data_path = os.path.join('data', 'shipments.csv')
+        df = pd.read_csv(data_path)
     return df
 
 # Load the data

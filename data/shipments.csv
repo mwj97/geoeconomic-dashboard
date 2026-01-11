@@ -1,0 +1,16 @@
+origin_city,dest_city,origin_lat,origin_lon,dest_lat,dest_lon,risk_level,value_usd,vessel_type,flag_state
+Miami,Dubai,25.7617,-80.1918,25.2048,55.2708,High,450000000,Container Ship,Panama
+New York,Tel Aviv,40.7128,-74.0060,32.0853,34.7818,High,280000000,Bulk Carrier,Liberia
+Los Angeles,Taipei,34.0522,-118.2437,25.0330,121.5654,Medium,620000000,Container Ship,Singapore
+Washington DC,Seoul,38.9072,-77.0369,37.5665,126.9780,Low,180000000,Bulk Carrier,USA
+Seattle,Tokyo,47.6062,-122.3321,35.6762,139.6503,Low,340000000,Container Ship,USA
+San Diego,Canberra,32.7157,-117.1611,-35.2809,149.1300,Low,95000000,Container Ship,UK
+Fort Worth,Riyadh,32.7555,-97.3308,24.7136,46.6753,High,520000000,Oil Tanker,Marshall Islands
+Phoenix,New Delhi,33.4484,-112.0740,28.6139,77.2090,Medium,210000000,Bulk Carrier,Hong Kong
+Dallas,London,32.7767,-96.7970,51.5074,-0.1278,Low,380000000,Container Ship,Germany
+Boston,Berlin,42.3601,-71.0589,52.5200,13.4050,Low,145000000,Bulk Carrier,UK
+Miami,Singapore,25.7617,-80.1918,1.3521,103.8198,Medium,490000000,Container Ship,Netherlands
+Los Angeles,Abu Dhabi,34.0522,-118.2437,24.4539,54.3773,High,310000000,Oil Tanker,Panama
+New York,Warsaw,40.7128,-74.0060,52.2297,21.0122,Medium,175000000,Bulk Carrier,Poland
+Chicago,Paris,41.8781,-87.6298,48.8566,2.3522,Low,225000000,Container Ship,France
+Houston,Mumbai,29.7604,-95.3698,19.0760,72.8777,Medium,395000000,Container Ship,India

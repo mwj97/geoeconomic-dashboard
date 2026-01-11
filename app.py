@@ -162,6 +162,33 @@ dest_points.columns = ['city', 'lat', 'lon']
 point_data = pd.concat([origin_points, dest_points]).drop_duplicates(subset=['city'])
 point_data['size'] = 200
 
+# Load country boundaries GeoJSON
+@st.cache_data
+def load_countries_geojson():
+    """Load world countries GeoJSON data from Natural Earth"""
+    import requests
+    url = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"
+    response = requests.get(url)
+    return response.json()
+
+countries_geojson = load_countries_geojson()
+
+# Define country boundaries layer
+countries_layer = pdk.Layer(
+    "GeoJsonLayer",
+    data=countries_geojson,
+    opacity=0.3,
+    stroked=True,
+    filled=True,
+    extruded=False,
+    wireframe=False,
+    get_fill_color=[15, 18, 41, 80],  # Dark blue with low opacity (#0f1229)
+    get_line_color=[0, 255, 255, 120],  # Cyan borders with medium opacity
+    get_line_width=500,
+    line_width_min_pixels=1,
+    pickable=True
+)
+
 # Define arc layer with dynamic colors and widths
 arc_layer = pdk.Layer(
     "ArcLayer",
@@ -198,9 +225,9 @@ view_state = pdk.ViewState(
     bearing=0
 )
 
-# Create the deck with dark map style - layer order: arcs, points
+# Create the deck with dark map style - layer order: countries, arcs, points
 r = pdk.Deck(
-    layers=[arc_layer, point_layer],
+    layers=[countries_layer, arc_layer, point_layer],
     initial_view_state=view_state,
     map_style="mapbox://styles/mapbox/dark-v10",
     tooltip={

@@ -1,14 +1,23 @@
 # 🛰️ Geoeconomic Intelligence Dashboard
 
-A real-time defense & aerospace trade flow monitoring system built with Streamlit and PyDeck.
+A quarterly trade flow monitoring system for key global economic corridors built with Streamlit and PyDeck.
 
 ## Features
 
-- **3D Globe Visualization**: Interactive 3D map with trade flow arcs
-- **Risk-Based Intelligence**: Color-coded routes (Red=High, Yellow=Medium, Blue=Low)
-- **Compliance Monitoring**: Automated detection of high-risk shipments on flags of convenience
-- **Live Filtering**: Real-time risk level filtering with dynamic statistics
-- **Professional UI**: Dark cyberpunk theme with neon accents
+- **Heat Map Visualization**: Interactive 3D heat map showing trade intensity across major economic corridors
+- **Time Series Analysis**: Slider control for 5 years of quarterly data (Q1 2021 - Q4 2025)
+- **Economic Corridor Tracking**: Focus on critical global chokepoints including:
+  - Strait of Hormuz
+  - Red Sea / Suez Canal
+  - Malacca Strait
+  - South China Sea
+  - Panama Canal
+  - English Channel
+  - Bosphorus Strait
+  - Strait of Gibraltar
+- **Trade Analytics**: Quarter-over-quarter comparison, corridor rankings, and historical trends
+- **Live Filtering**: Real-time corridor selection with dynamic statistics
+- **Professional UI**: Dark cyberpunk theme with heat map gradients
 
 ## Quick Start
 
@@ -43,9 +52,9 @@ streamlit run app.py
 
 ```
 geoeconomics/
-├── app.py                  # Main Streamlit application
+├── app.py                  # Main Streamlit application with corridor heat maps
 ├── data/
-│   └── shipments.csv      # Trade route data (15 routes)
+│   └── shipments.csv      # Legacy data (no longer used)
 ├── .streamlit/
 │   └── config.toml        # Streamlit theme configuration
 ├── requirements.txt        # Python dependencies
@@ -53,30 +62,31 @@ geoeconomics/
 └── README.md              # This file
 ```
 
-## Data Schema
+## Data Model
 
-The `shipments.csv` contains:
-- Origin/Destination cities with coordinates
-- Risk level (High/Medium/Low)
-- Shipment value in USD
-- Vessel type (Container Ship, Oil Tanker, Bulk Carrier)
-- Flag state (country of vessel registration)
+The dashboard generates synthetic quarterly trade data for 8 major economic corridors:
+- **Geographic Regions**: Each corridor defined by lat/lon boundaries
+- **Quarterly Values**: Trade volumes calculated with growth trends and seasonal variation
+- **Heat Map Points**: Generated dynamically based on trade intensity
+- **Time Range**: Q1 2021 - Q4 2025 (20 quarters)
+
+### Corridor Base Values (Annual Trade in Billions USD)
+- South China Sea: $940B
+- Strait of Hormuz: $850B
+- Malacca Strait: $780B
+- Red Sea / Suez Canal: $620B
+- English Channel: $580B
+- Strait of Gibraltar: $425B
+- Panama Canal: $340B
+- Bosphorus Strait: $285B
 
 ## Key Technologies
 
 - **Streamlit**: Web framework
-- **PyDeck**: 3D map visualization
-- **Pandas**: Data manipulation
-- **NumPy**: Numerical operations
-
-## Compliance Intelligence
-
-The dashboard automatically flags high-risk shipments using flags of convenience:
-- Panama
-- Liberia
-- Marshall Islands
-
-Alerts are displayed in real-time below the map.
+- **PyDeck**: 3D map visualization with HeatmapLayer
+- **Pandas**: Data manipulation and time series analysis
+- **NumPy**: Numerical operations and statistical modeling
+- **Requests**: GeoJSON data fetching for country boundaries
 
 ## License
 

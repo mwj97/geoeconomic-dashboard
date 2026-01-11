@@ -174,7 +174,7 @@ st.sidebar.markdown("---")
 
 # Main title
 st.title("🛰️ Strategic Trade Chokepoints")
-st.markdown("Quarterly trade flow heat map across key economic corridors")
+st.markdown("Quarterly trade flow heat map across key economic corridors | **Values in Billions USD ($B)**")
 
 # Add time slider for selecting quarters
 st.markdown("### 📅 Time Period Selection")
@@ -200,13 +200,13 @@ filtered_data = corridor_df[
 
 # Function to format currency values
 def format_currency(value):
-    """Format USD values to human-readable format (e.g., $450M, $1.2B)"""
+    """Format USD values to human-readable format with units (Billions or Millions)"""
     if value >= 1e9:
-        return f"${value/1e9:.1f}B"
+        return f"${value/1e9:.1f}B"  # Billions
     elif value >= 1e6:
-        return f"${value/1e6:.0f}M"
+        return f"${value/1e6:.0f}M"  # Millions
     elif value >= 1e3:
-        return f"${value/1e3:.0f}K"
+        return f"${value/1e3:.0f}K"  # Thousands
     else:
         return f"${value:.0f}"
 
@@ -260,12 +260,19 @@ heatmap_layer = pdk.Layer(
 )
 
 # Create corridor center points for labels with quarterly data
+# Calculate total global trade for percentage calculations
+global_total = sum(corridor_info[c]['base_value'] for c in corridor_info.keys())
+
 corridor_centers = []
 for corridor_name in selected_corridors:
     center = corridor_info[corridor_name]['center']
     # Get quarterly value for this corridor
     corridor_quarter_data = filtered_data[filtered_data['corridor'] == corridor_name]
     quarterly_value = corridor_quarter_data['value'].iloc[0] if len(corridor_quarter_data) > 0 else 0
+
+    # Calculate percentage of global total (using annual base values)
+    annual_base = corridor_info[corridor_name]['base_value']
+    global_share_pct = (annual_base / global_total) * 100
 
     corridor_centers.append({
         'name': corridor_name,
@@ -274,21 +281,25 @@ for corridor_name in selected_corridors:
         'quarterly_value': quarterly_value,
         'formatted_value': format_currency(quarterly_value),
         'quarter': selected_quarter,
-        'annual_estimate': format_currency(quarterly_value * 4)
+        'annual_estimate': format_currency(quarterly_value * 4),
+        'global_share': f"{global_share_pct:.1f}%"
     })
 
 corridor_centers_df = pd.DataFrame(corridor_centers)
 
-# Define scatter plot layer for corridor labels
+# Define scatter plot layer for corridor labels - made more prominent
 if len(corridor_centers_df) > 0:
     corridor_points_layer = pdk.Layer(
         "ScatterplotLayer",
         data=corridor_centers_df,
         get_position=["lon", "lat"],
-        get_color=[0, 255, 255, 200],  # Cyan
-        get_radius=150000,
+        get_color=[0, 255, 255, 255],  # Bright cyan with full opacity
+        get_radius=250000,  # Increased from 150000 for better visibility
         pickable=True,
-        auto_highlight=True
+        auto_highlight=True,
+        stroked=True,
+        get_line_color=[255, 255, 255, 255],  # White border
+        line_width_min_pixels=2
     )
 else:
     corridor_points_layer = None
@@ -317,8 +328,9 @@ r = pdk.Deck(
                 "<b style='font-size: 16px; color: #00ffff;'>{name}</b><br/>"
                 "<div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid #00ffff;'>"
                 "<b>Period:</b> {quarter}<br/>"
-                "<b>Quarterly Trade:</b> {formatted_value}<br/>"
-                "<b>Annual Estimate:</b> {annual_estimate}<br/>"
+                "<b>Quarterly Trade:</b> {formatted_value} (Billions USD)<br/>"
+                "<b>Annual Estimate:</b> {annual_estimate} (Billions USD)<br/>"
+                "<b>Share of Global Total:</b> {global_share}<br/>"
                 "</div>"
                 "</div>",
         "style": {

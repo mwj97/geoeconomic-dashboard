@@ -1,2 +1,0 @@
-# System packages required for deployment
-# Empty for this project - no additional system packages needed

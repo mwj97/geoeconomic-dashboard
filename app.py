@@ -309,47 +309,25 @@ if len(corridor_centers_df) > 0:
         data=corridor_centers_df,
         get_position=["lon", "lat"],
         get_text="name",
-        get_size=16,  # Large, readable text size
-        get_color=[255, 255, 255, 255],  # Bright white for high contrast
+        get_size=18,  # Larger text size for better readability
+        get_color=[0, 255, 255, 255],  # Bright cyan matching theme
         get_angle=0,
         get_text_anchor="'middle'",
-        get_alignment_baseline="'bottom'",
-        offset=[0, -45],  # Position above marker with more space
+        get_alignment_baseline="'center'",
+        offset=[0, 0],  # Centered on marker
         font_family="'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif",
-        font_weight="600",  # Semi-bold for professional look
+        font_weight="700",  # Bold for maximum visibility
         pickable=False,
         billboard=True,  # Always face the user, even when map is tilted
         background=True,
-        get_background_color=[0, 0, 0, 140],  # Semi-transparent black background
-        background_padding=[4, 4],  # Padding around text for visibility
+        get_background_color=[10, 14, 39, 220],  # Darker, more opaque background matching app theme
+        background_padding=[8, 5],  # More padding for better readability
         parameters={'depthTest': False}  # Render on top, never cut off by terrain
     )
 
-    # Trade values with high visibility configuration
-    corridor_value_layer = pdk.Layer(
-        "TextLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_text="formatted_value",
-        get_size=15,  # Large, readable text size
-        get_color=[255, 255, 255, 255],  # Bright white for high contrast
-        get_angle=0,
-        get_text_anchor="'middle'",
-        get_alignment_baseline="'top'",
-        offset=[0, 45],  # Position below marker with more space
-        font_family="'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif",
-        font_weight="500",  # Medium weight for values
-        pickable=False,
-        billboard=True,  # Always face the user, even when map is tilted
-        background=True,
-        get_background_color=[0, 0, 0, 140],  # Semi-transparent black background
-        background_padding=[4, 4],  # Padding around text for visibility
-        parameters={'depthTest': False}  # Render on top, never cut off by terrain
-    )
 else:
     corridor_points_layer = None
     corridor_text_layer = None
-    corridor_value_layer = None
 
 # Define the initial view state
 view_state = pdk.ViewState(
@@ -367,8 +345,6 @@ if corridor_points_layer is not None:
     layers_list.append(corridor_points_layer)
 if corridor_text_layer is not None:
     layers_list.append(corridor_text_layer)
-if corridor_value_layer is not None:
-    layers_list.append(corridor_value_layer)
 
 # Create the deck with dark map style - layer order: countries, heatmap, corridor points
 r = pdk.Deck(

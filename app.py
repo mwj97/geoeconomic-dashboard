@@ -1,5 +1,7 @@
 import streamlit as st
-import pydeck as pdk
+import folium
+from folium.plugins import HeatMap
+from streamlit_folium import st_folium
 import pandas as pd
 import numpy as np
 import os
@@ -210,54 +212,37 @@ def format_currency(value):
     else:
         return f"${value:.0f}"
 
-# Load country boundaries GeoJSON
-@st.cache_data
-def load_countries_geojson():
-    """Load world countries GeoJSON data from Natural Earth"""
-    import requests
-    url = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"
-    response = requests.get(url)
-    return response.json()
-
-countries_geojson = load_countries_geojson()
-
-# Define country boundaries layer
-countries_layer = pdk.Layer(
-    "GeoJsonLayer",
-    data=countries_geojson,
-    opacity=0.3,
-    stroked=True,
-    filled=True,
-    extruded=False,
-    wireframe=False,
-    get_fill_color=[15, 18, 41, 80],  # Dark blue with low opacity (#0f1229)
-    get_line_color=[0, 255, 255, 120],  # Cyan borders with medium opacity
-    get_line_width=500,
-    line_width_min_pixels=1,
-    pickable=True
+# Create Folium map with dark theme
+m = folium.Map(
+    location=[20, 30],
+    zoom_start=2,
+    tiles='CartoDB dark_matter',
+    max_bounds=True,
+    world_copy_jump=True,
+    no_wrap=False,
+    min_zoom=2,
+    max_zoom=10
 )
 
-# Define heat map layer for economic corridors
-heatmap_layer = pdk.Layer(
-    "HeatmapLayer",
-    data=filtered_data,
-    get_position=["lon", "lat"],
-    get_weight="weight",
-    radiusPixels=60,
-    intensity=1,
-    threshold=0.05,
-    colorRange=[
-        [0, 0, 0, 0],           # Transparent for low activity
-        [65, 182, 196, 100],    # Light teal
-        [127, 205, 187, 150],   # Medium teal
-        [199, 233, 180, 200],   # Light yellow-green
-        [237, 248, 177, 230],   # Yellow
-        [255, 237, 160, 255],   # Light orange
-        [254, 178, 76, 255],    # Orange
-        [240, 59, 32, 255]      # Red for highest activity
-    ],
-    pickable=False
-)
+# Add heatmap layer for economic corridors
+if len(filtered_data) > 0:
+    heat_data = [[row['lat'], row['lon'], row['weight']] for _, row in filtered_data.iterrows()]
+    HeatMap(
+        heat_data,
+        radius=25,
+        blur=20,
+        max_zoom=10,
+        gradient={
+            0.0: '#000000',   # Transparent/black for low activity
+            0.2: '#41b6c4',   # Light teal
+            0.4: '#7fcdb7',   # Medium teal
+            0.6: '#c7e9b4',   # Light yellow-green
+            0.7: '#edf8b1',   # Yellow
+            0.8: '#ffeda0',   # Light orange
+            0.9: '#feb34c',   # Orange
+            1.0: '#f03b20'    # Red for highest activity
+        }
+    ).add_to(m)
 
 # Create corridor center points for labels with quarterly data
 # Calculate total global trade for percentage calculations
@@ -287,94 +272,59 @@ for corridor_name in selected_corridors:
 
 corridor_centers_df = pd.DataFrame(corridor_centers)
 
-# Define scatter plot layer for corridor labels - made more prominent
+# Add chokepoint markers with permanent labels
 if len(corridor_centers_df) > 0:
-    # Prominent corridor marker points
-    corridor_points_layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_color=[0, 255, 255, 255],  # Bright cyan with full opacity
-        get_radius=300000,  # Large visible markers
-        pickable=True,
-        auto_highlight=True,
-        stroked=True,
-        get_line_color=[255, 255, 255, 255],  # White border
-        line_width_min_pixels=4
-    )
+    for _, corridor in corridor_centers_df.iterrows():
+        # Create popup with detailed info
+        popup_html = f"""
+        <div style='font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; min-width: 250px;'>
+            <b style='font-size: 15px; color: #00ffff; font-weight: 600;'>{corridor['name']}</b><br/>
+            <div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 200, 255, 0.3);'>
+                <div style='margin: 4px 0;'><b style='color: #666;'>Period:</b> <span style='color: #333;'>{corridor['quarter']}</span></div>
+                <div style='margin: 4px 0;'><b style='color: #666;'>Quarterly Trade:</b> <span style='color: #00aaff;'>{corridor['formatted_value']} (Billions USD)</span></div>
+                <div style='margin: 4px 0;'><b style='color: #666;'>Annual Estimate:</b> <span style='color: #00aaff;'>{corridor['annual_estimate']} (Billions USD)</span></div>
+                <div style='margin: 4px 0;'><b style='color: #666;'>Share of Global Total:</b> <span style='color: #333;'>{corridor['global_share']}</span></div>
+            </div>
+        </div>
+        """
 
-    # Corridor names with high visibility configuration
-    corridor_text_layer = pdk.Layer(
-        "TextLayer",
-        data=corridor_centers_df,
-        get_position=["lon", "lat"],
-        get_text="name",
-        get_size=18,  # Larger text size for better readability
-        get_color=[0, 255, 255, 255],  # Bright cyan matching theme
-        get_angle=0,
-        get_text_anchor="'middle'",
-        get_alignment_baseline="'center'",
-        offset=[0, 0],  # Centered on marker
-        font_family="'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif",
-        font_weight="700",  # Bold for maximum visibility
-        pickable=False,
-        billboard=True,  # Always face the user, even when map is tilted
-        background=True,
-        get_background_color=[10, 14, 39, 220],  # Darker, more opaque background matching app theme
-        background_padding=[8, 5],  # More padding for better readability
-        parameters={'depthTest': False}  # Render on top, never cut off by terrain
-    )
+        # Create marker with cyan color
+        marker = folium.CircleMarker(
+            location=[corridor['lat'], corridor['lon']],
+            radius=8,
+            color='#ffffff',
+            fill=True,
+            fillColor='#00ffff',
+            fillOpacity=1,
+            weight=2,
+            popup=folium.Popup(popup_html, max_width=300)
+        )
 
-else:
-    corridor_points_layer = None
-    corridor_text_layer = None
+        # Add permanent label (always visible)
+        marker.add_child(
+            folium.Tooltip(
+                text=corridor['name'],
+                permanent=True,
+                direction='center',
+                style="""
+                    background-color: rgba(10, 14, 39, 0.95);
+                    color: #00ffff;
+                    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+                    font-size: 14px;
+                    font-weight: 700;
+                    padding: 6px 10px;
+                    border: 2px solid #00ffff;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                    white-space: nowrap;
+                """
+            )
+        )
 
-# Define the initial view state
-view_state = pdk.ViewState(
-    latitude=20,
-    longitude=30,
-    zoom=1.5,
-    pitch=45,
-    bearing=0
-)
-
-# Create layers list with proper ordering (bottom to top)
-# Order: countries → heatmap → corridor points → text labels
-layers_list = [countries_layer, heatmap_layer]
-if corridor_points_layer is not None:
-    layers_list.append(corridor_points_layer)
-if corridor_text_layer is not None:
-    layers_list.append(corridor_text_layer)
-
-# Create the deck with dark map style - layer order: countries, heatmap, corridor points
-r = pdk.Deck(
-    layers=layers_list,
-    initial_view_state=view_state,
-    map_style="mapbox://styles/mapbox/dark-v10",
-    tooltip={
-        "html": "<div style='font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;'>"
-                "<b style='font-size: 15px; color: #f5f5f5; font-weight: 600;'>{name}</b><br/>"
-                "<div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(100, 200, 255, 0.3);'>"
-                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Period:</b> <span style='color: #e0e0e0;'>{quarter}</span></div>"
-                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Quarterly Trade:</b> <span style='color: #64c8ff;'>{formatted_value} (Billions USD)</span></div>"
-                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Annual Estimate:</b> <span style='color: #64c8ff;'>{annual_estimate} (Billions USD)</span></div>"
-                "<div style='margin: 4px 0;'><b style='color: #a0a0a0;'>Share of Global Total:</b> <span style='color: #e0e0e0;'>{global_share}</span></div>"
-                "</div>"
-                "</div>",
-        "style": {
-            "backgroundColor": "rgba(20, 25, 35, 0.95)",
-            "color": "#e0e0e0",
-            "border": "1px solid rgba(100, 200, 255, 0.3)",
-            "borderRadius": "6px",
-            "padding": "12px 14px",
-            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.5)",
-            "fontSize": "13px"
-        }
-    }
-)
+        marker.add_to(m)
 
 # Display the map
-st.pydeck_chart(r, use_container_width=True)
+st_folium(m, width=None, height=600, returned_objects=[])
 
 # Calculate quarterly metrics for selected corridors
 quarterly_values = filtered_data.groupby('corridor')['value'].first().reset_index()
